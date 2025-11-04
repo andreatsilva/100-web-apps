@@ -1,5 +1,5 @@
 const input = document.getElementById("input");
-const output = doccument.getElementById("output");
+const output = document.getElementById("output");
 const buttons = doccument.getElementById(".btn");
 
 function toTitleCase(str) {
