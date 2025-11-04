@@ -2,6 +2,19 @@ const textarea = document.getElementById("input");
 const buttons = document.querySelectorAll("[data-action]");
 const statsPanel = document.getElementById("statsPanel");
 
+function formatReadingTime(words) {
+  const wpm = 200; // average reading speed
+  const minutes = Math.floor(words / wpm);
+  const seconds = Math.round((words % wpm) / (wpm / 60));
+
+  if (minutes === 0 && seconds === 0) return "< 1 sec";
+  if (minutes === 0) return `${seconds} sec`;
+  if (seconds === 0) return `${minutes} min`;
+  return `${minutes} min ${seconds} sec`;
+}
+
+
+
 function updateStats() {
   const text = textarea.value;
 
@@ -9,14 +22,14 @@ function updateStats() {
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length).length;
   const paragraphs = text.split(/\n{2,}/).filter(p => p.trim().length).length;
-  const readingTime = (words / 200).toFixed(2);
+  const readingTime = formatReadingTime(words);
 
   statsPanel.innerHTML = `
     ${statBlock("Characters", characters, characters / 1000)}
     ${statBlock("Words", words, words / 500)}
     ${statBlock("Sentences", sentences, sentences / 100)}
     ${statBlock("Paragraphs", paragraphs, paragraphs / 50)}
-    ${statBlock("Reading time (min)", readingTime, readingTime / 10)}
+    ${statBlock("Reading time (min)", readingTime, words / 2000)}
   `;
 }
 
