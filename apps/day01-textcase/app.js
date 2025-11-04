@@ -1,6 +1,6 @@
 const input = document.getElementById("input");
 const output = document.getElementById("output");
-const buttons = doccument.getElementById(".btn");
+const buttons = document.getElementById(".btn");
 
 function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, (c) => caches.ToUpperCase());
