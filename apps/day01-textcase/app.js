@@ -2,9 +2,26 @@ const textarea = document.getElementById("input");
 const buttons = document.querySelectorAll("[data-action]");
 const statsPanel = document.getElementById("statsPanel");
 const fancyBtn = document.getElementById("fancyBtn");
-
+const copyBtn = document.getElementById("copyBtn");
 let fancyIndex = 0;
 let originalText = "";
+
+
+
+copyBtn.addEventListener("click", async () => {
+  const text = textarea.value;
+  if (!text.trim()) return;
+
+  await navigator.clipboard.writeText(text);
+
+  copyBtn.innerText = "✅ Copied!";
+  copyBtn.disabled = true;
+
+  setTimeout(() => {
+    copyBtn.innerText = "Copy";
+    copyBtn.disabled = false;
+  }, 1200);
+});
 
 // FANCY FONT MAPS
 const fancyFonts = [
