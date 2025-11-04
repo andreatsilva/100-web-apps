@@ -3,68 +3,95 @@ const buttons = document.querySelectorAll("[data-action]");
 const statsPanel = document.getElementById("statsPanel");
 const fancyBtn = document.getElementById("fancyBtn");
 
+let fancyIndex = 0;
+let originalText = "";
+
+// FANCY FONT MAPS
 const fancyFonts = [
-  txt => txt, // normal
-  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119951)), // bold script
-  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119743)), // bold
-  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119737)), // italic
-  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119783)), // bold italic
-  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119841)), // monospace
-  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 120367)), // double-struck
-  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 120319)), // fraktur
-  txt => circle(txt),
-  txt => square(txt),
+  { name: "Normal", map: t => t },
+  { name: "Bold", map: t => replaceRange(t, 0x1d400, 0x1d41a) },
+  { name: "Italic", map: t => replaceRange(t, 0x1d434, 0x1d44e) },
+  { name: "Bold Italic", map: t => replaceRange(t, 0x1d468, 0x1d482) },
+  { name: "Script", map: t => replaceRange(t, 0x1d49c, 0x1d4b6) },
+  { name: "Bold Script", map: t => replaceRange(t, 0x1d4d0, 0x1d4ea) },
+  { name: "Fraktur", map: t => replaceRange(t, 0x1d504, 0x1d51e) },
+  { name: "Double Struck", map: t => replaceRange(t, 0x1d538, 0x1d552) },
+  { name: "Monospace", map: t => replaceRange(t, 0x1d670, 0x1d68a) },
+  { name: "Circled", map: circleText },
+  { name: "Squared", map: squareText },
 ];
 
-let fancyIndex = 0;
+// Unicode mappers
+function replaceRange(text, upperBase, lowerBase) {
+  return text
+    .replace(/[A-Z]/g, c =>
+      String.fromCodePoint(c.charCodeAt(0) - 65 + upperBase)
+    )
+    .replace(/[a-z]/g, c =>
+      String.fromCodePoint(c.charCodeAt(0) - 97 + lowerBase)
+    );
+}
 
+function circleText(text) {
+  return text.replace(/[a-z]/g, c =>
+    String.fromCodePoint(c.charCodeAt(0) - 97 + 0x24d0)
+  );
+}
+
+function squareText(text) {
+  return text.replace(/[A-Z]/g, c =>
+    String.fromCodePoint(c.charCodeAt(0) - 65 + 0x1f130)
+  );
+}
+
+// ✅ Fancy Font Button
 fancyBtn.addEventListener("click", () => {
-  const text = input.value;
+  const text = textarea.value;
+  if (!text.trim()) return;
+
+  if (fancyIndex === 0) originalText = text;
+
   fancyIndex = (fancyIndex + 1) % fancyFonts.length;
-  input.value = fancyFonts[fancyIndex](text);
+  textarea.value = fancyFonts[fancyIndex].map(originalText);
+
   updateStats();
 });
 
-// Helpers for circled / squared letters
-function fancyCircle(c) {
-  if (c >= "a" && c <= "z") return String.fromCharCode(c.charCodeAt(0) + 9327);
-  return c;
-}
-function fancySquare(c) {
-  if (c >= "a" && c <= "z") return String.fromCharCode(c.charCodeAt(0) + 127183);
-  return c;
-}
 
-fancyBtn.addEventListener("click", () => {
-  // store original text on first click OR when normal text changes
-  if (lastRawText !== input.value && fancyIndex === 0) {
-    lastRawText = input.value;
-  }
+// CASE TRANSFORMS
+buttons.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const action = btn.getAttribute("data-action");
+    const text = textarea.value;
 
-  fancyIndex = (fancyIndex + 1) % fancyFonts.length;
-  input.value = fancyFonts[fancyIndex](lastRawText);
+    const transformations = {
+      upper: () => text.toUpperCase(),
+      lower: () => text.toLowerCase(),
+      title: () => text.replace(/\w\S*/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase()),
+      sentence: () => text.charAt(0).toUpperCase() + text.slice(1).toLowerCase(),
+      camel: () => text.toLowerCase().replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase()),
+      snake: () => text.toLowerCase().replace(/\s+/g, "_"),
+      kebab: () => text.toLowerCase().replace(/\s+/g, "-"),
+    };
 
-  updateStats();
+    textarea.value = transformations[action]();
+    updateStats();
+  });
 });
 
-
-
+// 📊 Stats system stays the same
 function formatReadingTime(words) {
-  const wpm = 200; // average reading speed
+  const wpm = 200;
   const minutes = Math.floor(words / wpm);
   const seconds = Math.round((words % wpm) / (wpm / 60));
-
   if (minutes === 0 && seconds === 0) return "< 1 sec";
   if (minutes === 0) return `${seconds} sec`;
   if (seconds === 0) return `${minutes} min`;
   return `${minutes} min ${seconds} sec`;
 }
 
-
-
 function updateStats() {
   const text = textarea.value;
-
   const characters = text.length;
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   const sentences = text.split(/[.!?]+/).filter(s => s.trim().length).length;
@@ -92,64 +119,6 @@ function statBlock(label, value, percent) {
   `;
 }
 
-function toTitleCase(str) {
-    return str.toLowerCase().replace(/\b\w/g, (c) => caches.ToUpperCase());
-
-}
-function toSentenceCase(str) {
-    return str.charAt(0).ToUpperCase() + str.slice(1).toLowerCase();
-}
-function toCamel(str){
-    return str
-    .toLowerCase()
-    .replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.ToUpperCase());
-}
-function toSnake(str){
-    return str
-    .toLowerCase()
-    .replace(/\s+/g, '_');
-}
-function toKebab(str){
-    return str
-    .toLowerCase()
-    .replace(/\s+/g, '-');
-}
-
-const actions = {
-    upper: (t) => t.toUpperCase(),
-    lower: (t) => t.toLowerCase,
-    title:  toTitleCase,
-    sentence: toSentenceCase,
-    camel: toCamel,
-    snake: toSnake,
-    kebab: toKebab,
-
-};
-
-buttons.forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const action = btn.getAttribute("data-action");
-    const text = textarea.value;
-
-    const transformations = {
-      upper: () => text.toUpperCase(),
-      lower: () => text.toLowerCase(),
-      title: () =>
-        text.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()),
-      sentence: () =>
-        text.charAt(0).toUpperCase() + text.slice(1).toLowerCase(),
-      camel: () =>
-        text
-          .toLowerCase()
-          .replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase()),
-      snake: () =>
-        text.toLowerCase().replace(/\s+/g, "_"),
-      kebab: () =>
-        text.toLowerCase().replace(/\s+/g, "-"),
-    };
-
-    textarea.value = transformations[action]();
-    updateStats();
-  });
-  updateStats();
-});
+// Auto-update stats
+textarea.addEventListener("input", updateStats);
+updateStats();
