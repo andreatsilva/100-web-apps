@@ -1,6 +1,5 @@
-const input = document.getElementById("input");
-const output = document.getElementById("output");
-const buttons = document.getElementById(".btn");
+const textarea = document.getElementById("input");
+const buttons = document.querySelectorAll("[data-action]");
 
 function toTitleCase(str) {
     return str.toLowerCase().replace(/\b\w/g, (c) => caches.ToUpperCase());
@@ -37,10 +36,27 @@ const actions = {
 };
 
 buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-        const action = btn.dataset.action;
-        output.value = actions[action](input.value);
-        
-        
-    });
+  btn.addEventListener("click", () => {
+    const action = btn.getAttribute("data-action");
+    const text = textarea.value;
+
+    const transformations = {
+      upper: () => text.toUpperCase(),
+      lower: () => text.toLowerCase(),
+      title: () =>
+        text.replace(/\w\S*/g, (w) => w[0].toUpperCase() + w.slice(1).toLowerCase()),
+      sentence: () =>
+        text.charAt(0).toUpperCase() + text.slice(1).toLowerCase(),
+      camel: () =>
+        text
+          .toLowerCase()
+          .replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase()),
+      snake: () =>
+        text.toLowerCase().replace(/\s+/g, "_"),
+      kebab: () =>
+        text.toLowerCase().replace(/\s+/g, "-"),
+    };
+
+    textarea.value = transformations[action]();
+  });
 });
