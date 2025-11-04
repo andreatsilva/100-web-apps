@@ -38,9 +38,9 @@ const actions = {
 
 buttons.forEach((btn) => {
     btn.addEventListener("click", () => {
-        const action = btn.getAttribute("data-action");
-        const text = input.value;
-        const result = actions[action](text);
-        output.value = result;
+        const action = btn.dataset.action;
+        output.value = actions[action](input.value);
+        
+        
     });
 });
