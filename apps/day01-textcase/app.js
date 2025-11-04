@@ -89,5 +89,7 @@ buttons.forEach((btn) => {
     };
 
     textarea.value = transformations[action]();
+    updateStats();
   });
+  updateStats();
 });
