@@ -4,16 +4,16 @@ const statsPanel = document.getElementById("statsPanel");
 const fancyBtn = document.getElementById("fancyBtn");
 
 const fancyFonts = [
-  s => s, // normal
-  s => s.toLowerCase().replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119951)), // bold script
-  s => s.replace(/[A-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119743)), // bold
-  s => s.replace(/[A-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119737)), // italic
-  s => s.replace(/[A-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119783)), // bold italic
-  s => s.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119841)), // monospace
-  s => s.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 120367)), // double-struck
-  s => s.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 120319)), // fraktur
-  s => s.toLowerCase().split("").map(c => fancyCircle(c)).join(""), // circled
-  s => s.toLowerCase().split("").map(c => fancySquare(c)).join(""), // squared
+  txt => txt, // normal
+  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119951)), // bold script
+  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119743)), // bold
+  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119737)), // italic
+  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119783)), // bold italic
+  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 119841)), // monospace
+  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 120367)), // double-struck
+  txt => txt.replace(/[a-z]/g, c => String.fromCharCode(c.charCodeAt(0) + 120319)), // fraktur
+  txt => circle(txt),
+  txt => square(txt),
 ];
 
 let fancyIndex = 0;
@@ -34,6 +34,20 @@ function fancySquare(c) {
   if (c >= "a" && c <= "z") return String.fromCharCode(c.charCodeAt(0) + 127183);
   return c;
 }
+
+fancyBtn.addEventListener("click", () => {
+  // store original text on first click OR when normal text changes
+  if (lastRawText !== input.value && fancyIndex === 0) {
+    lastRawText = input.value;
+  }
+
+  fancyIndex = (fancyIndex + 1) % fancyFonts.length;
+  input.value = fancyFonts[fancyIndex](lastRawText);
+
+  updateStats();
+});
+
+
 
 function formatReadingTime(words) {
   const wpm = 200; // average reading speed
