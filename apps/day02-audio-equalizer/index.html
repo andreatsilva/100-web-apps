@@ -3,27 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🚧 In Construction</title>
+  <title>Day02 Audio Equalizer</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
-    body {
-      background: linear-gradient(135deg, #1f2937, #111827);
+    body { background-color: #121212; color: #fff; }
+    .slider::-webkit-slider-thumb {
+      background: #1db954; border-radius: 50%; width: 20px; height: 20px; cursor: pointer;
     }
-    .wrench {
-      animation: bounce 1s infinite;
+    .slider::-moz-range-thumb {
+      background: #1db954; border-radius: 50%; width: 20px; height: 20px; cursor: pointer;
     }
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-20px); }
+    .slider::-ms-thumb {
+      background: #1db954; border-radius: 50%; width: 20px; height: 20px; cursor: pointer;
     }
+    canvas { display: block; margin: 0 auto; }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen text-white">
-  <div class="text-center">
-    <div class="text-6xl mb-4">🚧</div>
-    <h1 class="text-4xl font-bold mb-2">Page Under Construction</h1>
-    <p class="mb-6 text-gray-300">I'm building something awesome. Stay tuned!</p>
-    <div class="text-5xl wrench">🔧</div>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+  <h1 class="text-3xl font-bold mb-6 text-green-400">🎵 Spotify-style Audio EQ</h1>
+
+  <input type="file" id="audioFile" accept="audio/*" class="mb-4 text-white"/>
+
+  <div class="flex gap-4 mb-6">
+    <button id="playBtn" class="px-4 py-2 bg-green-500 rounded hover:bg-green-600"><i class="fa fa-play"></i> Play</button>
+    <button id="pauseBtn" class="px-4 py-2 bg-red-500 rounded hover:bg-red-600"><i class="fa fa-pause"></i> Pause</button>
   </div>
+
+  <div class="flex gap-6 mb-6">
+    <div class="flex flex-col items-center">
+      <label class="mb-1">Sub Bass (60 Hz)</label>
+      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq0">
+    </div>
+    <div class="flex flex-col items-center">
+      <label class="mb-1">Bass (170 Hz)</label>
+      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq1">
+    </div>
+    <div class="flex flex-col items-center">
+      <label class="mb-1">Mid (350 Hz)</label>
+      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq2">
+    </div>
+    <div class="flex flex-col items-center">
+      <label class="mb-1">Upper Mid (1k Hz)</label>
+      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq3">
+    </div>
+    <div class="flex flex-col items-center">
+      <label class="mb-1">Treble (3.5k Hz)</label>
+      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq4">
+    </div>
+  </div>
+
+  <canvas id="visualizer" width="800" height="200" class="mb-6 rounded-lg bg-black"></canvas>
+
+  <script src="app.js"></script>
 </body>
 </html>
