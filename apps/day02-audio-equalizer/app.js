@@ -1,17 +1,31 @@
 let audioCtx;
 let audioBuffer;
-let source;
+let source = null;
 let analyser;
 let dataArray;
 let bufferLength;
 let eqNodes = [];
 const eqFrequencies = [60, 170, 350, 1000, 3500];
+
 const audioFileInput = document.getElementById('audioFile');
 const playBtn = document.getElementById('playBtn');
 const pauseBtn = document.getElementById('pauseBtn');
 const canvas = document.getElementById('visualizer');
 const ctx = canvas.getContext('2d');
 
+/* ----- SAFE STOP ----- */
+function stopSource() {
+  if (source) {
+    try {
+      source.stop();
+    } catch (err) {
+      // ignore "InvalidStateError" (happens if start() was never called)
+    }
+    source = null;
+  }
+}
+
+/* ----- LOAD FILE ----- */
 audioFileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -20,26 +34,30 @@ audioFileInput.addEventListener('change', async (e) => {
   const arrayBuffer = await file.arrayBuffer();
   audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
 
-  setupAudioGraph();
+  setupAudioGraph(); // prepare graph but do not start yet
 });
 
+/* ----- PLAY ----- */
 playBtn.addEventListener('click', () => {
   if (!audioBuffer) return;
-  if (source) source.stop();
-  setupAudioGraph();
-  source.start();
-  drawVisualizer();
+
+  stopSource();      // kill old node safely
+  setupAudioGraph(); // create fresh node
+  source.start();    // start playback
+  drawVisualizer();  // start animation loop
 });
 
+/* ----- PAUSE ----- */
 pauseBtn.addEventListener('click', () => {
-  if (source) source.stop();
+  stopSource();      // safe stop, no error
 });
 
+/* ----- AUDIO GRAPH ----- */
 function setupAudioGraph() {
   source = audioCtx.createBufferSource();
   source.buffer = audioBuffer;
 
-  // EQ
+  // EQ Nodes
   eqNodes = eqFrequencies.map(freq => {
     const filter = audioCtx.createBiquadFilter();
     filter.type = 'peaking';
@@ -49,7 +67,7 @@ function setupAudioGraph() {
     return filter;
   });
 
-  // Connect EQ nodes in series
+  // Connect EQ chain
   source.connect(eqNodes[0]);
   for (let i = 0; i < eqNodes.length - 1; i++) {
     eqNodes[i].connect(eqNodes[i + 1]);
@@ -63,17 +81,19 @@ function setupAudioGraph() {
   bufferLength = analyser.frequencyBinCount;
   dataArray = new Uint8Array(bufferLength);
 
-  // Bind sliders
+  // Sliders
   eqNodes.forEach((node, i) => {
     const slider = document.getElementById(`eq${i}`);
     slider.oninput = () => node.gain.value = parseFloat(slider.value);
   });
 }
 
+/* ----- VISUALIZER ----- */
 function drawVisualizer() {
+  if (!analyser) return;
   requestAnimationFrame(drawVisualizer);
-  analyser.getByteFrequencyData(dataArray);
 
+  analyser.getByteFrequencyData(dataArray);
   ctx.fillStyle = '#121212';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
