@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Day02 Audio Equalizer</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Day02 Audio Equalizer + Playlist</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
   <style>
@@ -18,42 +18,88 @@
       background: #1db954; border-radius: 50%; width: 20px; height: 20px; cursor: pointer;
     }
     canvas { display: block; margin: 0 auto; }
+    .glass { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); }
+    .status-box { background: rgba(255,255,255,0.03); padding: .5rem; border-radius: .375rem; font-size: .9rem; color: #e6eef8; }
+    .small { font-size: .85rem; color: #bfcbd6; }
   </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-4">
-  <h1 class="text-3xl font-bold mb-6 text-green-400">🎵 Audio EQ</h1>
+<body class="min-h-screen p-6">
+  <div class="max-w-6xl mx-auto grid grid-cols-3 gap-6">
+    <!-- LEFT: EQ + Visualizer -->
+    <div class="col-span-2 glass rounded-lg p-6">
+      <h1 class="text-2xl font-bold mb-4 text-green-400">🎵 Audio EQ</h1>
 
-  <input type="file" id="audioFile" accept="audio/*" class="mb-4 text-white"/>
+      <div class="mb-4 flex gap-4 items-center">
+        <label class="flex-1">
+          <div class="text-sm text-gray-300 mb-1">Upload local audio (mp3/wav)</div>
+          <input type="file" id="audioFile" accept="audio/*" class="w-full text-white bg-transparent" />
+        </label>
+        <div class="flex gap-2">
+          <button id="playBtn" class="px-4 py-2 bg-green-500 rounded hover:bg-green-600"><i class="fa fa-play"></i> Play</button>
+          <button id="pauseBtn" class="px-4 py-2 bg-red-500 rounded hover:bg-red-600"><i class="fa fa-pause"></i> Pause</button>
+        </div>
+      </div>
 
-  <div class="flex gap-4 mb-6">
-    <button id="playBtn" class="px-4 py-2 bg-green-500 rounded hover:bg-green-600"><i class="fa fa-play"></i> Play</button>
-    <button id="pauseBtn" class="px-4 py-2 bg-red-500 rounded hover:bg-red-600"><i class="fa fa-pause"></i> Pause</button>
+      <div class="flex gap-6 mb-6">
+        <div class="flex flex-col items-center">
+          <label class="mb-1">Sub Bass (60 Hz)</label>
+          <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq0">
+        </div>
+        <div class="flex flex-col items-center">
+          <label class="mb-1">Bass (170 Hz)</label>
+          <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq1">
+        </div>
+        <div class="flex flex-col items-center">
+          <label class="mb-1">Mid (350 Hz)</label>
+          <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq2">
+        </div>
+        <div class="flex flex-col items-center">
+          <label class="mb-1">Upper Mid (1k Hz)</label>
+          <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq3">
+        </div>
+        <div class="flex flex-col items-center">
+          <label class="mb-1">Treble (3.5k Hz)</label>
+          <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq4">
+        </div>
+      </div>
+
+      <canvas id="visualizer" width="800" height="200" class="mb-6 rounded-lg bg-black w-full"></canvas>
+      <div id="eqStatus" class="text-sm text-gray-400 mt-2">EQ ready</div>
+    </div>
+
+    <!-- RIGHT: Playlist UI -->
+    <aside class="glass rounded-lg p-6 h-fit">
+      <h2 class="text-lg font-semibold mb-3">Playlist (.eqpl)</h2>
+
+      <div class="space-y-2 mb-3">
+        <input id="ytUrl" type="text" placeholder="Paste YouTube URL (convert & add)" class="w-full bg-transparent border border-gray-700 rounded px-3 py-2"/>
+        <!-- Minimal status box (S1) -->
+        <div id="ytStatus" class="status-box small">Ready</div>
+      </div>
+
+      <div class="mb-3 flex gap-2">
+        <button id="convertAddBtn" class="w-1/2 bg-indigo-600 py-2 rounded">Convert & Add</button>
+        <button id="addMetaBtn" class="w-1/2 bg-gray-700 py-2 rounded">Add metadata only</button>
+      </div>
+
+      <div class="mb-3">
+        <button id="addLocalToListBtn" class="w-full bg-gray-700 py-2 rounded mb-2">Add last uploaded to list</button>
+        <button id="exportPlBtn" class="w-full bg-yellow-600 py-2 rounded mb-2">Export .eqpl</button>
+        <label class="w-full block">
+          <div class="w-full bg-gray-700 text-center py-2 rounded cursor-pointer">Import .eqpl
+            <input id="importPlInput" type="file" accept=".eqpl,.json" class="hidden" />
+          </div>
+        </label>
+      </div>
+
+      <div>
+        <h3 class="text-sm text-gray-300 mb-2">Tracks</h3>
+        <div id="playlist" class="space-y-2 max-h-[38vh] overflow-auto"></div>
+      </div>
+
+      <div id="plStatus" class="text-xs text-gray-400 mt-3"></div>
+    </aside>
   </div>
-
-  <div class="flex gap-6 mb-6">
-    <div class="flex flex-col items-center">
-      <label class="mb-1">Sub Bass (60 Hz)</label>
-      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq0">
-    </div>
-    <div class="flex flex-col items-center">
-      <label class="mb-1">Bass (170 Hz)</label>
-      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq1">
-    </div>
-    <div class="flex flex-col items-center">
-      <label class="mb-1">Mid (350 Hz)</label>
-      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq2">
-    </div>
-    <div class="flex flex-col items-center">
-      <label class="mb-1">Upper Mid (1k Hz)</label>
-      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq3">
-    </div>
-    <div class="flex flex-col items-center">
-      <label class="mb-1">Treble (3.5k Hz)</label>
-      <input type="range" min="-30" max="30" value="0" class="slider w-32" id="eq4">
-    </div>
-  </div>
-
-  <canvas id="visualizer" width="800" height="200" class="mb-6 rounded-lg bg-black"></canvas>
 
   <script src="app.js"></script>
 </body>
