@@ -3,96 +3,163 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MiniSheet</title>
+  <title>MiniSheet — Excel Pro (Client-side)</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    :root { --bg: #0f1720; --panel:#0b1115; --muted:#97a0a6; --accent:#ffcc00; --cell-bg:#0f1416; }
-    html.light { --bg: #f7f7f8; --panel:#ffffff; --muted:#6b7280; --cell-bg:#fff; }
-    body { background: linear-gradient(180deg,#0b0f12, #111418); color:#e6eef2; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; min-height:100vh; }
-    .panel { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)); border-radius:10px; padding:10px; border:1px solid rgba(255,255,255,0.03); }
-    .smallmuted { color:var(--muted); font-size:0.9rem; background:transparent; border:0; cursor:pointer; }
-    .sheet-header { background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02)); color: #dbe6ea; padding:8px 10px; border-bottom:1px solid rgba(255,255,255,0.03); text-align:center; font-size:13px; font-weight:500; }
-    .row-header { background:transparent; color:#b8c6cc; width:44px; text-align:center; border-right:1px solid rgba(255,255,255,0.02); padding:8px 6px; font-size:13px; font-weight:500; }
-    table { width:100%; border-collapse:collapse; table-layout:fixed; }
-    th, td { border-bottom:1px solid rgba(255,255,255,0.02); border-right:1px solid rgba(255,255,255,0.01); }
-    td { background: transparent; min-width:60px; overflow:hidden; }
-    .cell { width:100%; height:100%; box-sizing:border-box; }
-    .col-resizer { width:10px; height:100%; cursor:col-resize; display:inline-block; }
-    .row-handle { position:relative; }
-    /* selection visuals */
-    .cell.selected { background-color: rgba(79,140,255,0.06) !important; outline: 2px solid rgba(79,140,255,0.12) !important; }
-    /* adjust grid viewport */
-    #gridViewport { overflow:auto; height: calc(100vh - 140px); }
-    /* toolbar button */
-    .toolbar-btn { background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.03); padding:6px 8px; border-radius:8px; cursor:pointer; color:var(--muted); }
-    .toolbar-btn.active { background: rgba(79,140,255,0.12); color: #cfe8ff; border-color: rgba(79,140,255,0.14); }
-    /* make headers subtle in light/dark */
-    html.light .sheet-header, html.light .row-header { color:#334155; border-bottom-color:#e6e6e6; border-right-color:#e6e6e6; }
-    /* small helper */
-    .panel-title { font-weight:600; color:#f8f9fa; margin-bottom:8px; font-size:14px; }
-    html.light body { color:#0b1220; }
+    :root {
+      --bg: #0e0e0e;
+      --panel: #0b0f12;
+      --muted: #9aa6ad;
+      --accent: #21c55d;
+      --cell-bg: #0f1416;
+      --line: rgba(255,255,255,0.06);
+      --header-text: #e6eef2;
+    }
+    html.light {
+      --bg: #ffffff;
+      --panel: #f7f7f8;
+      --muted: #6b7280;
+      --accent: #0f6d32;
+      --cell-bg: #ffffff;
+      --line: rgba(0,0,0,0.06);
+      --header-text: #0b1220;
+    }
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--header-text);font-family: "Segoe UI", Roboto, Inter, system-ui;}
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(0,0,0,0.02));border-radius:10px;padding:10px;border:1px solid var(--line);}
+    /* top ribbon */
+    .ribbon { display:flex; gap:8px; align-items:center; padding:8px; }
+    .rbtn { background:transparent; border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:6px; color:var(--muted); cursor:pointer; font-weight:600; }
+    .rbtn.active { background: rgba(33,197,93,0.12); color:#dfffe5; border-color: rgba(33,197,93,0.16); }
+    .rinput { background:transparent; border:1px solid rgba(255,255,255,0.04); padding:6px 8px; border-radius:6px; color:var(--header-text); }
+    /* grid */
+    #gridWrap { display:flex; gap:12px; padding:12px; height: calc(100vh - 120px); }
+    #leftPanel { width:260px; }
+    #mainPanel { flex:1; display:flex; flex-direction:column; gap:8px; }
+    #viewport { flex:1; overflow:auto; border-radius:8px; background:var(--cell-bg); position:relative; }
+    table.sheet { border-collapse:collapse; width:100%; table-layout:fixed; min-width:800px; }
+    th.header { position:sticky; top:0; z-index:20; background:linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0.06)); border-bottom:1px solid var(--line); color:var(--muted); font-weight:600; font-size:12px; text-align:center; padding:8px 6px; }
+    th.rowHead { position:sticky; left:0; z-index:15; background:linear-gradient(90deg, rgba(0,0,0,0.06), rgba(0,0,0,0.02)); border-right:1px solid var(--line); width:48px; text-align:center; font-weight:600; color:var(--muted); }
+    td.cell { border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:6px 8px; min-width:80px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; vertical-align:middle; }
+    .cell.editing { outline:2px solid rgba(33,197,93,0.12); background: rgba(33,197,93,0.02); }
+    tr.zebra td { background: linear-gradient(180deg, rgba(255,255,255,0.005), rgba(0,0,0,0.01)); }
+    .table-outline { box-shadow: inset 0 0 0 2px rgba(33,197,93,0.18); border-radius:4px; }
+    .filter-icon { opacity:0; font-size:12px; cursor:pointer; margin-left:6px; }
+    th.header:hover .filter-icon { opacity:1; color:var(--muted); }
+    .resize-handle { position:absolute; width:8px; top:0; bottom:0; right:-4px; cursor:col-resize; z-index:50; }
+    .row-resize-handle { position:absolute; height:8px; left:0; right:0; bottom:-4px; cursor:row-resize; z-index:50; }
+    .guide-vert, .guide-horiz { position:fixed; background:var(--accent); opacity:0.85; z-index:9999; pointer-events:none; }
+    .guide-vert { width:2px; top:0; bottom:0; }
+    .guide-horiz { height:2px; left:0; right:0; }
+    /* filter modal */
+    .filter-modal { position:fixed; z-index:9999; background:var(--panel); border:1px solid var(--line); padding:10px; border-radius:8px; box-shadow:0 12px 40px rgba(0,0,0,0.6); min-width:220px; }
+    .muted-sm { color:var(--muted); font-size:12px; }
+    /* context menu */
+    .ctx { position:fixed; z-index:2000; background:var(--panel); border:1px solid var(--line); padding:6px; border-radius:6px; display:none; }
+    .color-swatch { width:20px; height:20px; border-radius:4px; cursor:pointer; border:1px solid rgba(255,255,255,0.06); display:inline-block; margin-right:6px; }
+    /* small adjustments */
+    .thin { font-weight:500; font-size:13px; }
   </style>
 </head>
-<body class="p-4">
-  <div class="max-w-7xl mx-auto grid grid-cols-12 gap-4">
-    <!-- Left: sheets -->
-    <aside class="col-span-3 panel p-4 flex flex-col gap-4" id="leftPanel">
-      <div><input id="workbookName" placeholder="Workbook name" class="w-full panel p-2 rounded bg-transparent border border-white/5" /></div>
-      <div>
-        <div class="panel-title">Sheets</div>
-        <div id="sheetsList" class="flex flex-col gap-2"></div>
-        <div class="mt-3 flex gap-2">
-          <button id="addSheetBtn" class="toolbar-btn">+ Sheet</button>
-          <button id="exportWorkbookBtn" class="toolbar-btn">Export</button>
-          <input id="importWorkbookInput" type="file" accept=".json" style="display:none" />
-          <button id="importWorkbookBtn" class="toolbar-btn">Import</button>
-        </div>
+<body>
+  <div class="panel" style="margin:12px; border-radius:12px;">
+    <div class="ribbon">
+      <div style="display:flex; gap:6px; align-items:center;">
+        <button id="alignBtn" class="rbtn">Align ▾</button>
+        <button id="wrapBtn" class="rbtn">Wrap ▾</button>
+        <button id="boldBtn" class="rbtn">B</button>
+        <button id="italicBtn" class="rbtn">I</button>
+        <button id="underlineBtn" class="rbtn">U</button>
+        <button id="borderBtn" class="rbtn">Border ▾</button>
+        <button id="fillBtn" class="rbtn">Fill ▾</button>
+        <button id="filterToggle" class="rbtn">Filter</button>
+        <button id="insertTable" class="rbtn">Insert Table</button>
       </div>
 
-      <div class="mt-auto text-sm text-white/70">
-        <div class="mb-2">Grid controls</div>
-        <div class="flex items-center gap-4">
-          <div>Cols:<br/><input id="colCount" type="number" value="15" class="w-16 panel p-1 rounded bg-transparent border border-white/5" /></div>
-          <div>Rows:<br/><input id="rowCount" type="number" value="40" class="w-16 panel p-1 rounded bg-transparent border border-white/5" /></div>
-          <div><button id="resizeBtn" class="toolbar-btn">Resize</button></div>
+      <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+        <input id="formulaInput" placeholder="Click a cell or type = to start a formula" class="rinput" style="width:360px"/>
+        <select id="formatSel" class="rinput">
+          <option value="auto">Text</option><option value="number">Number</option><option value="date">Date</option>
+        </select>
+        <button id="themeToggle" class="rbtn">Theme</button>
+        <button id="exportCSV" class="rbtn">Export CSV</button>
+      </div>
+    </div>
+  </div>
+  <!-- Insert Table Dropdown -->
+<div id="insertTableDropdown" class="dropdown-menu" style="display:none; width:320px;">
+  <div style="padding:12px; font-weight:700;">Insert Table Style</div>
+  <div id="tableStyleGrid" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:0 12px 12px;"></div>
+</div>
+
+<!-- Border Dropdown -->
+<div id="borderDropdown" class="dropdown-menu" style="display:none; width:180px;">
+  <div class="border-item" data-type="all">All Borders</div>
+  <div class="border-item" data-type="outside">Outside Borders</div>
+  <div class="border-item" data-type="inside">Inside Borders</div>
+  <hr>
+  <div class="border-item" data-type="top">Top Border</div>
+  <div class="border-item" data-type="bottom">Bottom Border</div>
+  <div class="border-item" data-type="left">Left Border</div>
+  <div class="border-item" data-type="right">Right Border</div>
+  <hr>
+  <div class="border-item" data-type="none">No Borders</div>
+</div>
+
+  <div id="gridWrap">
+    <aside id="leftPanel" class="panel">
+      <div><input id="workbookName" placeholder="Workbook name" class="rinput w-full thin" /></div>
+      <div style="margin-top:8px; font-weight:700;">Sheets</div>
+      <div id="sheetList" style="display:flex; flex-direction:column; gap:8px; margin-top:8px;"></div>
+      <div style="display:flex; gap:8px; margin-top:8px;">
+        <button id="addSheet" class="rbtn">+ Sheet</button>
+        <button id="importWB" class="rbtn">Import</button>
+        <button id="exportWB" class="rbtn">Export</button>
+      </div>
+
+      <div style="margin-top:auto; font-size:13px; color:var(--muted);">
+        <div style="margin-top:12px;">Grid controls</div>
+        <div style="display:flex; gap:8px; margin-top:6px;">
+          <label class="muted-sm">Cols <input id="colCount" class="rinput w-16" type="number" /></label>
+          <label class="muted-sm">Rows <input id="rowCount" class="rinput w-16" type="number" /></label>
+          <button id="resizeGrid" class="rbtn">Resize</button>
         </div>
-        <div class="mt-3 flex gap-2">
-          <button id="undoBtn" class="toolbar-btn">Undo</button>
-          <button id="redoBtn" class="toolbar-btn">Redo</button>
-          <button id="saveBtn" class="toolbar-btn">Save</button>
+        <div style="margin-top:12px; display:flex; gap:8px;">
+          <button id="undo" class="rbtn">Undo</button>
+          <button id="redo" class="rbtn">Redo</button>
+          <button id="saveWB" class="rbtn">Save</button>
         </div>
       </div>
     </aside>
 
-    <!-- Right: main -->
-    <section class="col-span-9 panel p-4 flex flex-col gap-3">
-      <!-- top toolbar row: formatting + formula + controls -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3" id="toolbarContainer">
-          <!-- formatting toolbar will be injected here -->
-        </div>
-
-        <div class="flex items-center gap-2">
-          <input id="formula" placeholder="Click a cell or type = to start a formula" class="panel p-2 rounded w-96 bg-transparent border border-white/5" />
-          <select id="cellFormat" class="panel p-2 rounded bg-transparent border border-white/5">
-            <option value="auto">Text</option>
-            <option value="number">Number</option>
-            <option value="currency">Currency</option>
-            <option value="date">Date</option>
-          </select>
-          <button id="toggleTheme" class="toolbar-btn">Theme</button>
-          <button id="importCsvBtn" class="toolbar-btn">Import CSV</button>
-          <input id="csvFile" type="file" accept=".csv" style="display:none"/>
-          <button id="exportCsvBtn" class="toolbar-btn">Export CSV</button>
-        </div>
-      </div>
-
-      <div id="gridViewport" class="virtual-viewport panel p-2">
-        <table id="sheet" class="min-w-full"></table>
+    <section id="mainPanel">
+      <div id="viewport" class="panel">
+        <table id="sheetTable" class="sheet"></table>
       </div>
     </section>
   </div>
 
+  <!-- guides -->
+  <div id="guideV" class="guide-vert" style="display:none"></div>
+  <div id="guideH" class="guide-horiz" style="display:none"></div>
+
+  <!-- filter modal (checklist + search) -->
+  <div id="filterModal" style="display:none;" class="filter-modal"></div>
+
+  <!-- context menu -->
+  <div id="contextMenu" class="ctx">
+    <div><button id="ctx_insert_row" class="rbtn">Insert Row Below</button></div>
+    <div style="margin-top:6px;"><button id="ctx_delete_row" class="rbtn">Delete Row</button></div>
+    <div style="margin-top:6px;">Row Color:</div>
+    <div style="margin-top:6px;">
+      <span class="color-swatch" data-color="#ffffff" style="background:#ffffff;"></span>
+      <span class="color-swatch" data-color="#f2f8e9" style="background:#f2f8e9;"></span>
+      <span class="color-swatch" data-color="#fff7e6" style="background:#fff7e6;"></span>
+      <span class="color-swatch" data-color="#e7f5ff" style="background:#e7f5ff;"></span>
+      <span class="color-swatch" data-color="#ffdede" style="background:#ffdede;"></span>
+    </div>
+  </div>
+
+  <input id="fileImport" type="file" accept=".json,.csv" style="display:none" />
   <script src="app.js"></script>
 </body>
 </html>

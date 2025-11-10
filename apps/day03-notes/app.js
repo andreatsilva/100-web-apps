@@ -104,6 +104,41 @@ function updateUndoRedoButtons() {
 }
 
 /* ---------- Utils ---------- */
+/* ---------- Editable helpers ---------- */
+function makeEditableMultiline(el) {
+  el.setAttribute("contenteditable", "true");
+  el.style.whiteSpace = "pre-wrap";
+  el.style.wordBreak = "break-word";
+  el.style.minHeight = "1.5em";
+
+  el.addEventListener("keydown", (e) => {
+    // Ctrl+Enter or Cmd+Enter → new block
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      const note = notes.find(n => n.id === selectedId);
+      if (!note) return;
+      const allBlocks = Array.from(blocksArea.querySelectorAll("[data-block-id]"));
+      const current = allBlocks.findIndex(b => b.contains(el));
+      if (current === -1) return;
+
+      const nb = { id: uid("b"), type: "paragraph", content: "" };
+      note.blocks.splice(current + 1, 0, nb);
+      pushHistory(note);
+      scheduleSave();
+      renderBlocks(note);
+      focusBlock(nb.id);
+    }
+
+    // Regular Enter → newline inside same block
+    else if (e.key === "Enter") {
+      e.preventDefault();
+      document.execCommand("insertHTML", false, "\n");
+    }
+  });
+}
+
+
+
 const uid = (p='n') => `${p}_${Math.random().toString(36).slice(2,9)}`;
 const nowISO = () => new Date().toISOString();
 function formatDate(iso){ return new Date(iso).toLocaleString(); }
@@ -263,6 +298,7 @@ function renderBlockElement(note, block, index){
     const caption = document.createElement('div');
     caption.className = 'block contenteditable smallmuted';
     caption.contentEditable = true;
+    makeEditableMultiline(ce); 
     caption.innerText = block.caption || '';
     caption.oninput = () => { block.caption = caption.innerText; scheduleSave(); };
     caption.onfocus = () => { lastFocusedEditable = caption; showFormatToolbarFor(caption); };
@@ -273,6 +309,7 @@ function renderBlockElement(note, block, index){
     pre.className = 'codeblock';
     pre.contentEditable = true;
     pre.spellcheck = false;
+    makeEditableMultiline(ce); 
     pre.innerText = block.content || '';
     pre.oninput = () => { block.content = pre.innerText; scheduleSave(); };
     pre.onfocus = () => { lastFocusedEditable = pre; hideFormatToolbar(); }; // hide formatting for code
@@ -283,6 +320,7 @@ function renderBlockElement(note, block, index){
     ce.className = block.type === 'heading' ? 'block text-xl font-semibold' : 'block text-sm';
     ce.contentEditable = true;
     ce.spellcheck = false;
+    makeEditableMultiline(ce);
     ce.innerText = block.content || '';
     ce.oninput = () => { block.content = ce.innerText; scheduleSave(); };
     ce.onkeydown = blockKeyHandler(note, block, ce);
@@ -356,17 +394,12 @@ function renderBlockElement(note, block, index){
   return wrapper;
 }
 
+
+
 /* ---------- keyboard and slash commands ---------- */
 function blockKeyHandler(note, block, ce){
   return function(e){
-    if (e.key === 'Enter'){
-      e.preventDefault();
-      const idx = note.blocks.findIndex(b=>b.id===block.id);
-      const nb = { id: uid('b'), type:'paragraph', content: '' };
-      note.blocks.splice(idx+1,0,nb);
-      pushHistory(note);
-      scheduleSave(); renderBlocks(note); focusBlock(nb.id);
-    }
+   
     // slash commands at line start (space triggers)
     if (e.key === ' ' && ce.innerText.trim().startsWith('/')){
       const cmd = ce.innerText.trim();
